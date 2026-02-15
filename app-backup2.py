@@ -20,6 +20,9 @@ app.config['RESULTS_FOLDER'] = 'static/results'
 app.config['ALLOWED_EXTENSIONS'] = {'jpg', 'jpeg', 'png'}
 app.secret_key = 'your-secret-key-here'  # Add secret key for flash messages
 
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -288,13 +291,3 @@ def uploaded_file(filename):
 @app.route('/results/<filename>')
 def result_image(filename):
     return send_from_directory(app.config['RESULTS_FOLDER'], filename)
-
-if __name__ == '__main__':
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    os.makedirs(app.config['RESULTS_FOLDER'], exist_ok=True)
-    
-    # Check if models are loaded
-    if unet_model is None or resnet_model is None:
-        logger.warning("Some models failed to load. The application may not work properly.")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
