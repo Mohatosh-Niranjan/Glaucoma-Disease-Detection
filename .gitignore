@@ -1,0 +1,36 @@
+# Folders
+data/
+G1020_Structured/
+images/
+models/
+tflite_models/
+
+#Files
+app.py
+app-backup.py
+unet-new-train.py
+convert_model.py
+organize-g1020.py
+train-DenseNet121.py
+train-model-denseNet121.py
+train-model-ResNet.py
+
+
+
+
+venv/
+env/
+.venv/
+ENV/
+
+__pycache__/
+*.pyc
+
+# Images (all images)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.webp

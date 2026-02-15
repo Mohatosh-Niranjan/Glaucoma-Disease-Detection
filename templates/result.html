@@ -1,0 +1,169 @@
+﻿<!-- templates/result.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Result</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-teal-50 min-h-screen">
+    <div class="container mx-auto px-6 py-12 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-800"> Analysis Result</h1>
+            <p class="text-lg text-gray-600">AI-powered glaucoma detection using U-Net + DenseNet-121</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-2">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Results Card -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-gray-100">
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4"> Detection Summary</h2>
+                    <div class="space-y-3">
+                        <p class="text-lg"><span class="font-semibold">CDR:</span> 
+                            <span class="text-blue-600 font-bold">{{ cdr }}</span> 
+                            {% if cdr > 0.7 %}
+                                <span class="text-red-500 font-medium">(High Risk)</span>
+                            {% elif cdr > 0.5 %}
+                                <span class="text-yellow-500 font-medium">(Moderate Risk)</span>
+                            {% else %}
+                                <span class="text-green-500 font-medium">(Low Risk)</span>
+                            {% endif %}
+                        </p>
+                        <p class="text-lg"><span class="font-semibold">Classification:</span> 
+                            <span class="{% if classification == 'Glaucoma' %}text-red-600{% else %}text-green-600{% endif %} font-bold text-xl">
+                                {{ classification }}
+                            </span>
+                        </p>
+                        <!-- <p class="text-lg"><span class="font-semibold">Confidence:</span> 
+                            <span class="{% if confidence > 0.8 %}text-red-600{% elif confidence > 0.6 %}text-yellow-600{% else %}text-green-600{% endif %} font-bold">
+                                {{ "%.1f"|format(confidence * 100) }}%
+                            </span>
+                        </p> -->
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                            <h3 class="font-semibold text-gray-700 mb-2">Interpretation:</h3>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li> <strong>CDR (Cup-to-Disc Ratio):</strong> Normal < 0.5, Suspicious 0.5-0.7, High Risk > 0.7</li>
+                                <li> <strong>Classification:</strong> AI prediction based on fundus image analysis</li>
+                                <!-- <li> <strong>Confidence:</strong> Model's certainty in the prediction</li> -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center">
+                    <img src="{{ url_for('uploaded_file', filename=filename) }}" alt="Uploaded" class="rounded-lg shadow-md max-w-full h-auto">
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization Grid -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- Segmentation -->
+            <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">U-Net Segmentation</h3>
+                {% if segmentation_available %}
+                    <img src="{{ url_for('result_image', filename=result_image) }}" alt="Segmentation" class="rounded-lg shadow">
+                    <p class="text-sm text-gray-500 mt-2">Red: Optic Cup | Blue: Optic Disc</p>
+                {% else %}
+                    <div class="text-red-500 p-4">Segmentation visualization unavailable</div>
+                {% endif %}
+            </div>
+
+            <!-- Grad-CAM -->
+            <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">DenseNet-121 Attention (Grad-CAM)</h3>
+                {% if gradcam_available %}
+                    <img src="{{ url_for('result_image', filename=gradcam_image) }}" alt="Grad-CAM" class="rounded-lg shadow">
+                    <p class="text-sm text-gray-500 mt-2">Red areas: Model attention</p>
+                {% else %}
+                    <div class="text-red-500 p-4">Grad-CAM visualization unavailable</div>
+                {% endif %}
+            </div>
+
+            <!-- Combined View -->
+            <div class="bg-white rounded-xl shadow-lg p-4 text-center">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Side-by-Side Comparison</h3>
+                {% if segmentation_available and gradcam_available %}
+                    <div class="flex gap-2 justify-center">
+                        <img src="{{ url_for('result_image', filename=result_image) }}" class="w-1/2 rounded shadow" style="max-height: 120px; object-fit: cover;">
+                        <img src="{{ url_for('result_image', filename=gradcam_image) }}" class="w-1/2 rounded shadow" style="max-height: 120px; object-fit: cover;">
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Left: Segmentation | Right: Attention</p>
+                {% else %}
+                    <div class="text-gray-500 p-4">Combined view unavailable</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4"> Risk Assessment</h3>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2">CDR Analysis:</h4>
+                    <div class="space-y-2">
+                        {% if cdr > 0.7 %}
+                            <div class="flex items-center text-red-600">
+                                <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                <span>High Risk - Immediate consultation recommended</span>
+                            </div>
+                        {% elif cdr > 0.5 %}
+                            <div class="flex items-center text-yellow-600">
+                                <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                                <span>Moderate Risk - Regular monitoring advised</span>
+                            </div>
+                        {% else %}
+                            <div class="flex items-center text-green-600">
+                                <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                <span>Low Risk - Normal range</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-700 mb-2">AI Classification:</h4>
+                    <div class="space-y-2">
+                        {% if classification == 'Glaucoma' %}
+                            <div class="flex items-center text-red-600">
+                                <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                <span>Glaucoma detected - Professional evaluation needed</span>
+                            </div>
+                        {% else %}
+                            <div class="flex items-center text-green-600">
+                                <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                <span>Normal - No signs of glaucoma detected</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center space-x-4">
+            <a href="/" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow transition">
+                Upload Another Image
+            </a>
+            <button onclick="window.print()" class="inline-block bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-8 rounded-lg shadow transition">
+                Print Report
+            </button>
+        </div>
+    </div>
+</body>
+</html>
